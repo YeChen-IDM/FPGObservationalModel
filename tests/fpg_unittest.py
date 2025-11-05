@@ -1179,7 +1179,7 @@ class TestIntegrationScenarios(unittest.TestCase):
             self.assertEqual(row['true_coi'], expected_true_coi)
             self.assertEqual(row['effective_coi'], expected_effective_coi)
     
-    @patch('run_observational_model.pd.read_csv')
+    @patch('fpg_observational_model.run_observational_model.pd.read_csv')
     @patch('os.path.exists')
     @patch('os.makedirs')
     def test_run_observational_model_mock_integration(self, mock_makedirs, mock_exists, mock_read_csv):
