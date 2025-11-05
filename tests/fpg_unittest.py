@@ -18,6 +18,8 @@ from itertools import combinations
 from unittest.mock import patch, MagicMock
 import sys
 import os
+import tempfile
+import shutil
 
 # Add the current directory to the path to import your modules
 sys.path.append(os.path.dirname(__file__))
@@ -1178,49 +1180,44 @@ class TestIntegrationScenarios(unittest.TestCase):
             
             self.assertEqual(row['true_coi'], expected_true_coi)
             self.assertEqual(row['effective_coi'], expected_effective_coi)
-    
-    @patch('fpg_observational_model.run_observational_model.pd.read_csv')
-    @patch('os.path.exists')
-    @patch('os.makedirs')
-    def test_run_observational_model_mock_integration(self, mock_makedirs, mock_exists, mock_read_csv):
-        """Test main observational model function with mocked dependencies"""
-        
-        # Mock file operations
-        mock_exists.return_value = False
-        mock_read_csv.return_value = pd.DataFrame({
-            'infIndex': [0, 1, 2, 3],
-            'recursive_nid': ['[0]', '[1]', '[2,3]', '[4]'],
-            'genome_ids': ['[100]', '[101]', '[102,103]', '[104]'],
-            'bite_ids': ['[1]', '[2]', '[3]', '[4]'],
-            'fever_status': [1, 0, 1, 0],
-            'population': [0, 0, 1, 1],
-            'age_day': [1000, 2000, 3000, 4000],
-            'simulation_year': [1, 1, 2, 2],
-            'month': [1, 6, 1, 6],
-            'IndividualID': [100, 101, 102, 103]
-        })
-        
-        # This should run without array boolean errors
+
+    def test_run_observational_model_with_temp_dir(self):
+        """Test main observational model function with temporary directory"""
+
+        # Create temporary directory
+        temp_dir = tempfile.mkdtemp()
+
         try:
-            summaries, samples = run_observational_model(
-                sim_name="integration_test",
-                emod_output_path="./test_data",
-                config_path="./nonexistent_config.json",
-                output_path="./test_output"
-            )
-            
-            # Verify results structure
-            self.assertIsNotNone(summaries)
-            self.assertIsNotNone(samples)
-            self.assertIsInstance(summaries, pd.DataFrame)
-            self.assertIsInstance(samples, pd.DataFrame)
-            
-        except ValueError as e:
-            if "truth value of an array" in str(e):
-                self.fail("Array boolean error still occurring in integration test")
-            else:
-                # Other errors might be expected in mock environment
-                pass
+            # Mock only the file reading
+            with patch('pandas.read_csv') as mock_read_csv:
+                mock_read_csv.return_value = pd.DataFrame({
+                    'infIndex': [0, 1, 2, 3],
+                    'recursive_nid': ['[0]', '[1]', '[2,3]', '[4]'],
+                    'genome_ids': ['[100]', '[101]', '[102,103]', '[104]'],
+                    'bite_ids': ['[1]', '[2]', '[3]', '[4]'],
+                    'fever_status': [1, 0, 1, 0],
+                    'population': [0, 0, 1, 1],
+                    'age_day': [1000, 2000, 3000, 4000],
+                    'simulation_year': [1, 1, 2, 2],
+                    'month': [1, 6, 1, 6],
+                    'IndividualID': [100, 101, 102, 103]
+                })
+
+                # Run with temp directory
+                run_observational_model(
+                    sim_name="integration_test",
+                    emod_output_path="./test_data",
+                    config_path="./nonexistent_config.json",
+                    output_path=temp_dir
+                )
+
+                # Verify outputs were created
+                expected_summary = os.path.join(temp_dir, "integration_test_FPG_ModelSummaries.csv")
+                self.assertTrue(os.path.exists(expected_summary))
+
+        finally:
+            # Clean up temp directory
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
 class TestRhMetricCalculations(unittest.TestCase):
     """Test the R_h metric calculation functionality"""
@@ -1402,7 +1399,7 @@ class TestRhIntegration(unittest.TestCase):
         # Add sampling columns
         self.integration_df['rep_random_0'] = 1  # All sampled for simplicity
         
-    @patch('unified_metric_calculations.get_matrix')
+    @patch('fpg_observational_model.unified_metric_calculations.get_matrix')
     def test_rh_in_run_time_summaries(self, mock_get_matrix):
         """Test R_h calculation integration in run_time_summaries"""
         
