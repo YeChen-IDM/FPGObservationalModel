@@ -41,7 +41,8 @@ from fpg_observational_model.unified_metric_calculations import (
     process_nested_ibx,
     ibx_distribution,
     weighted_describe_scipy,
-    run_time_summaries
+    run_time_summaries,
+    calculate_rh
 )
 
 from fpg_observational_model.unified_sampling import (
@@ -448,9 +449,7 @@ class TestMonogenomicProportionSampling(unittest.TestCase):
     
     def test_monogenomic_proportion_basic_functionality(self):
         """Test basic monogenomic proportion sampling works"""
-        
-        from unified_sampling import subset_randomly
-        
+
         # Test 50% monogenomic proportion
         result_df = subset_randomly(
             self.biased_sampling_df,
@@ -483,9 +482,7 @@ class TestMonogenomicProportionSampling(unittest.TestCase):
     
     def test_monogenomic_proportion_accuracy(self):
         """Test that monogenomic proportion sampling achieves target proportions"""
-        
-        from unified_sampling import subset_randomly
-        
+
         test_cases = [
             (0.3, "30% monogenomic"),
             (0.7, "70% monogenomic"), 
@@ -521,9 +518,7 @@ class TestMonogenomicProportionSampling(unittest.TestCase):
     
     def test_monogenomic_proportion_edge_cases(self):
         """Test edge cases for monogenomic proportion sampling"""
-        
-        from unified_sampling import subset_randomly
-        
+
         # Test with proportion = 0 (no monogenomic)
         result_df_0 = subset_randomly(
             self.biased_sampling_df,
@@ -560,9 +555,7 @@ class TestMonogenomicProportionSampling(unittest.TestCase):
     
     def test_monogenomic_proportion_insufficient_samples(self):
         """Test behavior when insufficient samples of one type are available"""
-        
-        from unified_sampling import subset_randomly
-        
+
         # Create data with very few polygenomic samples
         few_poly_df = pd.DataFrame({
             'infIndex': list(range(20)),
@@ -594,9 +587,7 @@ class TestMonogenomicProportionSampling(unittest.TestCase):
     
     def test_monogenomic_proportion_with_multiple_replicates(self):
         """Test monogenomic proportion sampling with multiple replicates"""
-        
-        from unified_sampling import subset_randomly
-        
+
         result_df = subset_randomly(
             self.biased_sampling_df,
             n_samples_year=16,
@@ -625,9 +616,7 @@ class TestMonogenomicProportionSampling(unittest.TestCase):
     
     def test_monogenomic_proportion_validation(self):
         """Test validation of monogenomic proportion parameter"""
-        
-        from unified_sampling import subset_randomly
-        
+
         # Test invalid proportions (should handle gracefully or raise appropriate error)
         invalid_proportions = [-0.1, 1.1, 2.0]
         
@@ -651,9 +640,7 @@ class TestMonogenomicProportionSampling(unittest.TestCase):
     
     def test_monogenomic_proportion_reproducibility(self):
         """Test that monogenomic proportion sampling is reproducible with same seed"""
-        
-        from unified_sampling import subset_randomly
-        
+
         # Run twice with same seed
         result1 = subset_randomly(
             self.biased_sampling_df,
@@ -686,9 +673,7 @@ class TestMonogenomicProportionSampling(unittest.TestCase):
     
     def test_monogenomic_proportion_vs_regular_sampling(self):
         """Test that monogenomic proportion sampling differs from regular random sampling"""
-        
-        from unified_sampling import subset_randomly
-        
+
         # Regular random sampling
         regular_result = subset_randomly(
             self.biased_sampling_df,
@@ -1266,9 +1251,7 @@ class TestRhMetricCalculations(unittest.TestCase):
         
     def test_calculate_rh_basic_functionality(self):
         """Test basic R_h calculation functionality"""
-        
-        from unified_metric_calculations import calculate_rh
-        
+
         # Test with known data
         rh_summary, individual_rh = calculate_rh(
             self.rh_test_df, 
@@ -1300,9 +1283,7 @@ class TestRhMetricCalculations(unittest.TestCase):
     
     def test_calculate_rh_mathematical_accuracy(self):
         """Test R_h calculations with known expected values"""
-        
-        from unified_metric_calculations import calculate_rh
-        
+
         # Use fixed random seed for reproducible results
         np.random.seed(42)
         
@@ -1336,9 +1317,7 @@ class TestRhMetricCalculations(unittest.TestCase):
     
     def test_calculate_rh_edge_cases(self):
         """Test R_h calculation edge cases"""
-        
-        from unified_metric_calculations import calculate_rh
-        
+
         # Test with no COI=2 superinfections
         no_coi2_df = pd.DataFrame({
             'infIndex': [0, 1, 2],
@@ -1430,9 +1409,7 @@ class TestRhIntegration(unittest.TestCase):
         # Mock matrix
         mock_matrix = np.random.randint(0, 2, size=(50, 100))
         mock_get_matrix.return_value = mock_matrix
-        
-        from unified_metric_calculations import run_time_summaries
-        
+
         config = {
             'populations': False,
             'polygenomic': True,  # Required for R_h
@@ -1468,9 +1445,7 @@ class TestRhIntegration(unittest.TestCase):
     
     def test_rh_requires_polygenomic_comparison(self):
         """Test that R_h calculation properly requires polygenomic comparisons"""
-        
-        from unified_metric_calculations import run_time_summaries
-        
+
         # Config without polygenomic comparison should raise error
         config_no_poly = {
             'populations': False,
@@ -1479,7 +1454,7 @@ class TestRhIntegration(unittest.TestCase):
             'age_bins': False
         }
         
-        with patch('unified_metric_calculations.get_matrix') as mock_get_matrix:
+        with patch('fpg_observational_model.unified_metric_calculations.get_matrix') as mock_get_matrix:
             mock_get_matrix.return_value = np.random.randint(0, 2, size=(50, 100))
             
             # Should not crash but should warn about missing polygenomic comparisons
@@ -1498,9 +1473,7 @@ class TestRhScientificValidation(unittest.TestCase):
     
     def test_rh_mathematical_properties(self):
         """Test that R_h calculations maintain expected mathematical properties"""
-        
-        from unified_metric_calculations import calculate_rh
-        
+
         # Create test data with known mathematical relationships
         test_data = pd.DataFrame({
             'infIndex': [0, 1, 2, 3],
@@ -1534,9 +1507,7 @@ class TestRhScientificValidation(unittest.TestCase):
     
     def test_rh_bootstrap_consistency(self):
         """Test that bootstrap R_h calculations are consistent"""
-        
-        from unified_metric_calculations import calculate_rh
-        
+
         test_data = pd.DataFrame({
             'infIndex': [0, 1, 2],
             'effective_coi': [2, 2, 3],
@@ -1578,7 +1549,7 @@ def run_all_comprehensive_tests_with_rh():
         TestIntegrationScenarios,
         TestRhMetricCalculations,        # NEW
         TestRhIntegration,               # NEW
-        TestRhScientificValidation       # NEW
+        TestRhScientificValidation,       # NEW
         TestMonogenomicProportionSampling # NEW
     ]
     
