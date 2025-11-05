@@ -89,6 +89,13 @@ class TestBasicFunctionality(unittest.TestCase):
         # Register a test matrix
         self.test_matrix = np.random.randint(0, 2, size=(20, 100))
         register_matrix('basic_test_matrix', self.test_matrix)
+
+    def tearDown(self):
+        """Clean up registered matrices"""
+        # Clear the matrix registry if possible
+        # Or at least document that tests may interfere with each other
+        from fpg_observational_model.unified_metric_calculations import _matrix_registry
+        _matrix_registry.clear()
     
     def test_get_default_config(self):
         """Test default configuration structure"""
