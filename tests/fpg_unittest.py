@@ -425,6 +425,24 @@ class TestSamplingAndFiltering(unittest.TestCase):
 
         # ADD THIS TEST CLASS TO YOUR EXISTING TEST SUITE
 
+    def test_calculate_infection_metrics_edge_cases(self):
+        """Test infection metrics with edge cases"""
+        # Empty genome_ids
+        edge_df = pd.DataFrame({
+            'infIndex': [0],
+            'recursive_nid': ['[]'],
+            'genome_ids': ['[]'],
+            'bite_ids': ['[]'],
+            'simulation_year': [1],
+            'month': [1]
+        })
+
+        df_with_continuous = convert_month(edge_df.copy())
+        result_df = calculate_infection_metrics(df_with_continuous)
+
+        # Should handle empty lists gracefully
+        self.assertEqual(result_df.loc[0, 'true_coi'], 0)
+
 class TestMonogenomicProportionSampling(unittest.TestCase):
     """Test monogenomic proportion sampling functionality in subset_randomly"""
     
@@ -1009,6 +1027,13 @@ class TestMatrixOperations(unittest.TestCase):
             [0, 0, 1, 1, 1],  # genome 4 - different
         ])
         register_matrix('ibx_test_matrix', self.ibx_matrix)
+
+    def tearDown(self):
+        """Clean up registered matrices"""
+        from fpg_observational_model.unified_metric_calculations import _matrix_registry
+        # Only clear test matrices
+        _matrix_registry.pop('small_test_matrix', None)
+        _matrix_registry.pop('ibx_test_matrix', None)
     
     def test_matrix_registration_and_retrieval(self):
         """Test matrix registration system"""
