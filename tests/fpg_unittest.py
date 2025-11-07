@@ -1565,6 +1565,15 @@ class TestRhScientificValidation(unittest.TestCase):
 
 # UPDATE THE MAIN TEST RUNNER TO INCLUDE RH TESTS
 def run_all_comprehensive_tests_with_rh():
+    """
+    Custom test runner for unittest framework.
+
+    Note: When running with pytest, this function is NOT used.
+    Pytest will auto-discover and run all test classes.
+
+    To run with unittest: python fpg_unittest.py
+    To run with pytest: pytest fpg_unittest.py -v
+    """
     """Updated test runner that includes R_h metric tests"""
     
     # Define all test classes including new R_h tests
